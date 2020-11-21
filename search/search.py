@@ -19,6 +19,7 @@ Pacman agents (in searchAgents.py).
 
 import util
 
+
 class SearchProblem:
     """
     This class outlines the structure of a search problem, but doesn't implement
@@ -70,7 +71,62 @@ def tinyMazeSearch(problem):
     from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
-    return  [s, s, w, s, w, w, s, w]
+    return [s, s, w, s, w, w, s, w]
+
+
+def nullHeuristic(state, problem=None):
+    """
+    A heuristic function estimates the cost from the current state to the nearest
+    goal in the provided SearchProblem.  This heuristic is trivial.
+    """
+    return 0
+
+
+def common_method(problem, search_type, heuristic=nullHeuristic):
+    dfs_or_bfs = search_type == 'dfs' or search_type == 'bfs'
+    ucs_or_astar = search_type == 'ucs' or search_type == 'astar'
+    if search_type == 'dfs':
+        data_structure = util.Stack()
+    elif search_type == 'bfs':
+        data_structure = util.Queue()
+    else:
+        data_structure = util.PriorityQueue()
+
+    visited = []
+    actions_to_return = []
+    start_state = problem.getStartState()
+
+    if problem.isGoalState(start_state):
+        return []
+
+    if dfs_or_bfs:
+        data_structure.push((start_state, actions_to_return))
+    elif ucs_or_astar:
+        data_structure.push((start_state, actions_to_return, 0), 0)
+
+    while not data_structure.isEmpty():
+        if dfs_or_bfs:
+            current_state, actions_to_return = data_structure.pop()
+        elif ucs_or_astar:
+            current_state, actions_to_return, parent_cost = data_structure.pop()
+
+        if current_state not in visited:
+            visited.append(current_state)
+            if problem.isGoalState(current_state):
+                return actions_to_return
+
+            for next_state, action, cost in problem.getSuccessors(current_state):
+                updated_action = actions_to_return + [action]
+                if search_type == 'ucs':
+                    updated_priority = cost + parent_cost
+                    data_structure.push((next_state, updated_action, updated_priority), updated_priority)
+                elif search_type == 'astar':
+                    updated_priority = cost + parent_cost
+                    with_heuristic_cost = updated_priority + heuristic(next_state, problem)
+                    data_structure.push((next_state, updated_action, updated_priority), with_heuristic_cost)
+                else:
+                    data_structure.push((next_state, updated_action))
+
 
 def depthFirstSearch(problem):
     """
@@ -87,29 +143,25 @@ def depthFirstSearch(problem):
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return common_method(problem, 'dfs')
+
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return common_method(problem, 'bfs')
+
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return common_method(problem, 'ucs')
 
-def nullHeuristic(state, problem=None):
-    """
-    A heuristic function estimates the cost from the current state to the nearest
-    goal in the provided SearchProblem.  This heuristic is trivial.
-    """
-    return 0
 
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    return common_method(problem, 'astar', heuristic)
 
 
 # Abbreviations
