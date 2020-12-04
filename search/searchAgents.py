@@ -230,6 +230,24 @@ class PositionSearchProblem(search.SearchProblem):
             cost += self.costFn((x, y))
         return cost
 
+    def getCostOfActionsBackward(self, actions, initialState):
+        """
+        Returns the cost of a particular sequence of actions.  If those actions
+        include an illegal move, return 999999.  This is implemented for you.
+        """
+        if actions == None: return 999999
+        x,y= initialState
+       
+        cost = 0
+        for action in actions:
+            # Check figure out the next state and see whether its' legal
+            dx, dy = Actions.directionToVector(action)
+            x, y = int(x + dx), int(y + dy)
+            if self.walls[x][y]: return 999999
+            cost += self.costFn((x,y))
+        return cost
+
+
 
 class StayEastSearchAgent(SearchAgent):
     """
