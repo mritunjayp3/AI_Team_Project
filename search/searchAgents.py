@@ -308,37 +308,54 @@ class CornersProblem(search.SearchProblem):
         """
         self.walls = startingGameState.getWalls()
         self.startingPosition = startingGameState.getPacmanPosition()
-        top, right = self.walls.height - 2, self.walls.width - 2
-        self.corners = ((1, 1), (1, top), (right, 1), (right, top))
+        top, right = self.walls.height-2, self.walls.width-2
+        self.corners = ((1,1), (1,top), (right, 1), (right, top))
         for corner in self.corners:
             if not startingGameState.hasFood(*corner):
                 print 'Warning: no food in corner ' + str(corner)
-        self._expanded = 0  # DO NOT CHANGE; Number of search nodes expanded
+        self._expanded = 0 # DO NOT CHANGE; Number of search nodes expanded
         # Please add any code here which you would like to use
         # in initializing the problem
         "*** YOUR CODE HERE ***"
+        """ Goal State is where there is no food in any of the corner positions """
+        """ The state in the problem has been defined as (AgentPosition, (CornerPositions, Food or No Food))"""
+        """
+           Starting Position has been put into the goal state JUST to keep the state format intact, it is NOT used for 
+           the evaluation of the goal test check
+        """
+        self.goal=(self.startingPosition, ((1,1), False), ((1,top),False), ((right,1), False), ((right, top), False))
+        """Defining the Cost Function"""
+        self.costFn=lambda x: 1
 
     def getStartState(self):
         """
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
-        "*** YOUR CODE HERE ***"
-        return self.startingPosition, []
+
+        self.intialState=[]
+        """ Initial State is the tuple of initial agent postion and the position of all corners and if they contain food or not"""
+        """ Example:((4, 5), ((1, 1), True), ((1, 6), True), ((6, 1), True), ((6, 6), True)) """
+        self.intialState.append(self.startingPosition)
+        for corner in self.corners:
+            self.intialState.append((corner, True))
+        return tuple(self.intialState)
+        util.raiseNotDefined()
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
-        """
-        "*** YOUR CODE HERE ***"
-        node = state[0]
-        visited_corners = state[1]
+        """ 
+        """Goal Test is True only if all the the food has been eaten, which means the value is False for all the corner positions"""
+        """ Example: ((4, 6), ((1, 1), False), ((1, 6), False), ((6, 1), False), ((6, 6), False))"""
+        if(state[1]==self.goal[1] and state[2]==self.goal[2] and state[3]==self.goal[3] and state[4]==self.goal[4]):
+            isGoal=True
 
-        if node in self.corners:
-            if not node in visited_corners:
-                visited_corners.append(node)
-            return 4 == len(visited_corners)
-        return False
+        else:   
+            isGoal=False
+
+        return isGoal   
+        util.raiseNotDefined()
 
     def getSuccessors(self, state):
         """
@@ -350,32 +367,96 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-        x, y = state[0]
-        visited_corners = state[1]
+
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
-            # Add a successor
-            # state to the successor list if the action is legal
+            # Add a successor state to the successor list if the action is legal
             # Here's a code snippet for figuring out whether a new position hits a wall:
-            #   x,y = currentPosition
-            #   dx, dy = Actions.directionToVector(action)
-            #   nextx, nexty = int(x + dx), int(y + dy)
-            #   hitsWall = self.walls[nextx][nexty]
-
-            "*** YOUR CODE HERE ***"
+            x,y = state[0]
             dx, dy = Actions.directionToVector(action)
             nextx, nexty = int(x + dx), int(y + dy)
             hitsWall = self.walls[nextx][nexty]
-            if not hitsWall:
-                successorVisitedCorners = list(visited_corners)
-                next_node = (nextx, nexty)
-                if next_node in self.corners:
-                    if next_node not in successorVisitedCorners:
-                        successorVisitedCorners.append(next_node)
-                successor = ((next_node, successorVisitedCorners), action, 1)
-                successors.append(successor)
+            if not self.walls[nextx][nexty]:
+                """We first compute the next position of the agent/pacman"""
+                nextAgentPosition = (nextx, nexty)
+                """Then we calculate the cost of the action"""
+                cost = self.costFn(nextAgentPosition)
+                """ If the next position of the agent is not one of the corner positions,
+                    then the nextStates is the just the new agentposition and the old states of the corner positions
+                """
+                if nextAgentPosition not in self.corners:
+                    nextState=[]
+                    nextState.append(nextAgentPosition)
+                    for counter in range(1,5):
+                        nextState.append(state[counter])
+                    successors.append((tuple(nextState), action, cost))
+                
+                    """ 
+                        If the next position of the agent is one of the corner positions,
+                        then the next states is the new position of the agent AND the Updated Status of the corner positions(i.e. if food is there it is eaten)
+                    """ 
+                else:
+                    cornerIndex=self.corners.index(nextAgentPosition)
+                    nextState=[]
+                    nextState.append(nextAgentPosition)
+                    for counter in range(1,5):
+                        if(counter != cornerIndex+1):
+                            nextState.append(state[counter])
+                        else:
+                            nextState.append((self.corners[cornerIndex], False))
+                    successors.append((tuple(nextState), action, cost)) 
+        self._expanded += 1 # DO NOT CHANGE
+        return successors
 
-        self._expanded += 1  # DO NOT CHANGE
+    def getSuccessorsBackward(self, state):
+        """
+        Returns successor states, the actions they require, and a cost of 1.
+
+         As noted in search.py:
+            For a given state, this should return a list of triples, (successor,
+            action, stepCost), where 'successor' is a successor to the current
+            state, 'action' is the action required to get there, and 'stepCost'
+            is the incremental cost of expanding to that successor
+        """
+
+        successors = []
+        for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
+            # Add a successor state to the successor list if the action is legal
+            # Here's a code snippet for figuring out whether a new position hits a wall:
+            x,y = state[0]
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x + dx), int(y + dy)
+            hitsWall = self.walls[nextx][nexty]
+            if not self.walls[nextx][nexty]:
+                """We first compute the next position of the agent/pacman"""
+                nextAgentPosition = (nextx, nexty)
+                """Then we calculate the cost of the action"""
+                cost = self.costFn(nextAgentPosition)
+                """ If the next position of the agent is not one of the corner positions,
+                    then the nextStates is the just the new agentposition and the old states of the corner positions
+                """
+                if nextAgentPosition not in self.corners:
+                    nextState=[]
+                    nextState.append(nextAgentPosition)
+                    for counter in range(1,5):
+                        nextState.append(state[counter])
+                    successors.append((tuple(nextState), action, cost))
+                
+                    """ 
+                        If the next position of the agent is one of the corner positions,
+                        then the next states is the new position of the agent AND the Updated Status of the corner positions(i.e. if food is there it is Present)
+                    """ 
+                else:
+                    cornerIndex=self.corners.index(nextAgentPosition)
+                    nextState=[]
+                    nextState.append(nextAgentPosition)
+                    for counter in range(1,5):
+                        if(counter != cornerIndex+1):
+                            nextState.append(state[counter])
+                        else:
+                            nextState.append((self.corners[cornerIndex], True))
+                    successors.append((tuple(nextState), action, cost)) 
+        self._expanded += 1 # DO NOT CHANGE
         return successors
 
     def getCostOfActions(self, actions):
@@ -384,12 +465,34 @@ class CornersProblem(search.SearchProblem):
         include an illegal move, return 999999.  This is implemented for you.
         """
         if actions == None: return 999999
-        x, y = self.startingPosition
+        x,y= self.startingPosition
+
+    
         for action in actions:
             dx, dy = Actions.directionToVector(action)
             x, y = int(x + dx), int(y + dy)
             if self.walls[x][y]: return 999999
         return len(actions)
+
+    
+    def getCostOfActionsBackward(self, actions, initialState):
+        """
+        Returns the cost of a particular sequence of actions.  If those actions
+        include an illegal move, return 999999.  This is implemented for you.
+        """
+        if actions == None: return 999999
+        x,y= initialState
+       
+        cost = 0
+        for action in actions:
+            # Check figure out the next state and see whether its' legal
+            dx, dy = Actions.directionToVector(action)
+            x, y = int(x + dx), int(y + dy)
+            if self.walls[x][y]: return 999999
+            cost += self.costFn((x,y))
+        return cost
+    
+
 
 
 def cornersHeuristic(state, problem):
@@ -405,27 +508,26 @@ def cornersHeuristic(state, problem):
     shortest path from the state to a goal of the problem; i.e.  it should be
     admissible (as well as consistent).
     """
-    corners = problem.corners  # These are the corner coordinates
-    walls = problem.walls  # These are the walls of the maze, as a Grid (game.py)
+    corners = problem.corners # These are the corner coordinates
+    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
-    visited_corners = state[1]
-    pending_corners = []
-    for corner in corners:
-        if corner not in visited_corners:
-            pending_corners.append(corner)
-
-    coordinate = state[0]
-    current_point = coordinate
-    total_cost = 0
-    while pending_corners:
-        heuristic_cost, corner = min([(util.manhattanDistance(current_point, corner), corner)
-                                      for corner in pending_corners])
-        pending_corners.remove(corner)
-        current_point = corner
-        total_cost += heuristic_cost
-    return total_cost
-
+    def manhatten(position, corner):
+        "The Manhattan distance heuristic for a Corner Search Problem"
+        xy1 = position
+        xy2 = corner
+        return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
+    
+    """ 
+    Manhattan Distance of individual corners when there is food available at that particular corner 
+    or else it is zero 
+    """ 
+    manhatten_CR1= manhatten(state[0], state[1][0]) * int(state[1][1]) 
+    manhatten_CR2= manhatten(state[0], state[2][0]) * int(state[2][1])
+    manhatten_CR3= manhatten(state[0], state[3][0]) * int(state[3][1]) 
+    manhatten_CR4= manhatten(state[0], state[4][0]) * int(state[4][1])
+    """Returning the Max of all corner manhatten distances"""
+    return max(manhatten_CR1,manhatten_CR2,manhatten_CR3,manhatten_CR4)
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
