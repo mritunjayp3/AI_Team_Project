@@ -493,6 +493,8 @@ def meetInMiddleCornerSearch(problem, heuristic=nullHeuristic):
         "Bidirectional Search That Is Guaranteed to Meet in the Middle" by Robert C. Holte,Ariel Felner, Guni Sharon and Nathan R. Sturtevant;
         In the Proceedings of the Thirtieth AAAI Conference on Artificial Intelligence (AAAI-16)
 
+        This function implements the meet in the middle algorithm for the corner search problem in Berkley AI project
+
     """    
 
     print("Meet in the middle Algorithm for corner search problem Initiated")
@@ -518,7 +520,7 @@ def meetInMiddleCornerSearch(problem, heuristic=nullHeuristic):
             xy1 = position
             xy2 = corner
             return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
-        
+            #return 0
 
 
     def cornersHeuristic(state, problem, direction):
@@ -544,7 +546,7 @@ def meetInMiddleCornerSearch(problem, heuristic=nullHeuristic):
             xy1 = position
             xy2 = corner
             return abs(xy1[0] - xy2[0]) + abs(xy1[1] - xy2[1])
-            # return 0    
+            #return 0    
 
         """ 
         Manhattan Distance of individual corners when there is food available at that particular corner 
@@ -647,18 +649,18 @@ def meetInMiddleCornerSearch(problem, heuristic=nullHeuristic):
     
     
     initialState_Forward = problem.getStartState()          #Getting the intial State of the search problem for the forward direction search
-    initialPacmanPosition_Forward = initialState_Forward[0] 
+    initialPacmanPosition_Forward = initialState_Forward[0] #Extracting the Pacman Position from the initial state
     
-    allCorners=problem.corners
-    # startStateBackward= (random.choice(allCorners))
+    allCorners=problem.corners                              #Fetching the coordinates of the corner positions
+    
 
-    cornerPositionDist={}
+    cornerPositionDist={}                                   #Dictionary to store the manhattan distance of the corner position and its coordinate
     for corner in allCorners: 
         distance=manhatten(corner, initialPacmanPosition_Forward)
         cornerPositionDist[distance]=corner
 
     
-    startStateBackward = cornerPositionDist[max(cornerPositionDist.keys())]    
+    startStateBackward = cornerPositionDist[max(cornerPositionDist.keys())] # The corner which is farthest is used as the start position from the backward position   
 
     initialState_Backward = []
     initialState_Backward.append((tuple(startStateBackward)))#Getting the initial State of the search problem for the backward direction search
@@ -669,7 +671,7 @@ def meetInMiddleCornerSearch(problem, heuristic=nullHeuristic):
         else:
             initialState_Backward.append((corner, False))
     
-    initialState_Backward=tuple(initialState_Backward)
+    initialState_Backward=tuple(initialState_Backward)      #Initializing the food existance states for the backward direction search. False for all the positions except the start position of the reverse pacman
     
 
     frontierStatesForward.push(initialState_Forward,cornersHeuristic(initialState_Forward, problem, 'Forward'))      #Appending the intial state into the frontierStatesForward list
@@ -754,9 +756,9 @@ def meetInMiddleCornerSearch(problem, heuristic=nullHeuristic):
             else:
 
                 if(minValue==minPriorityValueinForwardQueue):
-                    parentNodeForward = frontierStatesForward.pop()          
+                    parentNodeForward = frontierStatesForward.pop()  #Pop the node which highest priority        
                     if(parentNodeForward not in exploredStatesForward):
-                        newFrontierNodes=problem.getSuccessors(parentNodeForward)
+                        newFrontierNodes=problem.getSuccessors(parentNodeForward)  #Get the successor nodes of the node which was just popped 
                         exploredStatesForward.append(parentNodeForward)
 
                         for childNodes in newFrontierNodes:
@@ -816,9 +818,9 @@ def meetInMiddleCornerSearch(problem, heuristic=nullHeuristic):
                 else:
                     
 
-                    parentNodeBackward = frontierStatesBackward.pop()          
+                    parentNodeBackward = frontierStatesBackward.pop()  #Pop the node which highest priority        
                     if(parentNodeBackward not in exploredStatesBackward):
-                        newFrontierNodes=problem.getSuccessorsBackward(parentNodeBackward)
+                        newFrontierNodes=problem.getSuccessorsBackward(parentNodeBackward) #Get the successor nodes of the node which was just popped
                         exploredStatesBackward.append(parentNodeBackward)
 
                         for childNodes in newFrontierNodes:
